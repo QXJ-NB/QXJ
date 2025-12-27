@@ -6,7 +6,7 @@ body {
   margin: 0;
   height: 100vh;
   position: relative;
-  background: url("https://cccimg.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg") no-repeat center center fixed;
+  background: url("http://pan.tool234.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg") no-repeat center center fixed;
   background-size: cover;
   padding-top: 120px;
 }
@@ -88,7 +88,6 @@ body::before {
   background: transparent;
   height: 40px;
 }
-/* 彻底修复下一首按钮：确保显示+交互正常 */
 #nextButton {
   padding: 10px 20px;
   border: 2px solid #C19A6B;
@@ -105,7 +104,7 @@ body::before {
   justify-content: center;
   opacity: 1;
   visibility: visible;
-  pointer-events: auto; /* 确保可点击 */
+  pointer-events: auto;
   transition: all 0.2s ease;
 }
 #nextButton:hover {
@@ -114,9 +113,8 @@ body::before {
   box-shadow: 0 3px 8px rgba(0,0,0,0.2);
 }
 #nextButton:active {
-  transform: scale(0.98); /* 点击反馈 */
+  transform: scale(0.98);
 }
-/* 原有功能按钮 */
 .functionBtn {
   font-size: 27px;
   cursor: pointer;
@@ -151,20 +149,16 @@ body::before {
   <div id="blurLayer"></div>
   <div id="audioPlayerContainer">
     <div id="audioWrapper">
-      <!-- 修复audio标签闭合错误（关键：移除多余>，避免DOM解析异常） -->
       <audio id="audioPlayer" controls preload="metadata">
         <source src="https://cccimg.com/view.php/012b61e454251519df89cfea66437fd0.mp3" type="audio/mpeg">
         你的浏览器不支持音频播放，请更新浏览器
       </audio>
-      <!-- 确保下一首按钮DOM结构独立、无嵌套错误 -->
       <button id="nextButton">下一首</button>
     </div>
   </div>
-  <!-- 保留功能按钮，删除两个打开应用按钮 -->
   <button id="originalBtn" class="functionBtn">和平灵敏度和键位</button>
   <button id="pubgBtn" class="functionBtn">PUBG键位和灵敏度</button>
 </div>
-
 <script>
 // 时间更新
 function updateBeijingTime() {
@@ -182,24 +176,29 @@ function updateBeijingTime() {
 }
 updateBeijingTime();
 setInterval(updateBeijingTime, 1000);
-
-// 音乐播放核心功能（确保下一首逻辑稳定）
+// 音乐播放核心功能
 const playlist = [
   {
-    url: "https://cccimg.com/view.php/012b61e454251519df89cfea66437fd0.mp3",
+    url: "http://pan.tool234.com/view.php/4a3d9de27ff2c4c60e2d2444dcf6513d.mp3",
     title: "歌曲1",
     artist: "未知艺术家",
-    artwork: "https://cccimg.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
+    artwork: "http://pan.tool234.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
   },
   {
-    url: "https://cccimg.com/view.php/4a3d9de27ff2c4c60e2d2444dcf6513d.mp3",
+    url: "http://pan.tool234.com/view.php/e39e69a02862468215161f5fa4a1ca11.mp3",
     title: "歌曲2",
     artist: "未知艺术家",
     artwork: "https://cccimg.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
   },
   {
-    url: "https://cccimg.com/view.php/d2733b2b075e4cb6e4aea1e155e8d6ca.flac",
+    url: "http://pan.tool234.com/view.php/580340fd3df2f2c3c75d02fed949ac2b.mp3",
     title: "歌曲3",
+    artist: "未知艺术家",
+    artwork: "https://cccimg.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
+  },
+  {
+    url: "http://pan.tool234.com/view.php/d2733b2b075e4cb6e4aea1e155e8d6ca.flac",
+    title: "歌曲4",
     artist: "未知艺术家",
     artwork: "https://cccimg.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
   }
@@ -208,14 +207,12 @@ let currentTrack = 0;
 const audioPlayer = document.getElementById('audioPlayer');
 const nextButton = document.getElementById('nextButton');
 let wasPlaying = false;
-
-// 加载歌曲（确保切换后正常播放）
+// 加载歌曲
 function loadCurrentTrack() {
   const currentSong = playlist[currentTrack];
   audioPlayer.src = currentSong.url;
   audioPlayer.load();
   
-  // 同步系统媒体控制（避免外部交互影响）
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: currentSong.title,
@@ -226,28 +223,21 @@ function loadCurrentTrack() {
     });
   }
 }
-
-// 下一首核心逻辑（简化+稳定）
+// 下一首逻辑
 function playNext() {
   currentTrack = (currentTrack + 1) % playlist.length;
   loadCurrentTrack();
-  // 尝试自动播放，失败则提示用户手动点击
   audioPlayer.play().catch(err => {
     console.log('切歌自动播放受限，需手动点击播放器播放', err);
   });
 }
-
-// 页面加载完成后强制绑定事件（确保不丢失）
+// 页面加载完成绑定事件
 document.addEventListener('DOMContentLoaded', function() {
-  // 绑定下一首按钮点击事件（双重绑定，确保生效）
   nextButton.addEventListener('click', playNext);
-  // 绑定播放器结束事件（歌曲播完自动切歌）
   audioPlayer.addEventListener('ended', playNext);
-  // 初始化加载第一首歌
   loadCurrentTrack();
 });
-
-// 页面可见性监听（不影响下一首功能）
+// 页面可见性监听
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
     wasPlaying = !audioPlayer.paused;
@@ -258,13 +248,11 @@ document.addEventListener('visibilitychange', function() {
     }
   }
 });
-
-// 功能按钮点击事件（保留原有）
+// 功能按钮点击事件
 document.getElementById('originalBtn').addEventListener('click', function() {
   alert("和平精英操作键位分享码：3076-2369-7722-1862-39");
   alert("和平精英战神灵敏度分享码：2972-8885-4279-9323-58");
 });
-
 document.getElementById('pubgBtn').addEventListener('click', function() {
   alert("PUBG操作键位分享码：1-7545-6865-2756-5628-421");
   alert("PUBG战神灵敏度分享码：1-7501-5574-9750-6311-007");
