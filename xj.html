@@ -94,6 +94,17 @@ body::before {
   width: 100%;
   box-sizing: border-box;
 }
+/* 头像样式（移除CSS动画，改为JS控制） */
+#audioAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #C19A6B;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transform-origin: center; /* 确保旋转中心正确 */
+}
+/* 原有样式保持不变 */
 #audioPlayer {
   flex: 1;
   border: none;
@@ -211,6 +222,8 @@ body::before {
   <div id="blurLayer"></div>
   <div id="audioPlayerContainer">
     <div id="audioWrapper">
+      <!-- 歌曲头像元素 -->
+      <img id="audioAvatar" src="https://cccimg.com/view.php/10aa25188ab9ee48465f945395ee84c1.jpg" alt="歌曲头像">
       <audio id="audioPlayer" controls preload="metadata">
         <source src="https://cccimg.com/view.php/012b61e454251519df89cfea66437fd0.mp3" type="audio/mpeg">
         你的浏览器不支持音频播放，请更新浏览器
@@ -250,36 +263,79 @@ setInterval(updateBeijingTime, 1000);
 const playlist = [
   {
     url: "http://pan.tool234.com/view.php/4a3d9de27ff2c4c60e2d2444dcf6513d.mp3",
-    title: "歌曲1",
+    title: "红色高跟鞋",
     artist: "未知艺术家",
-    artwork: "http://pan.tool234.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
+    artwork: "https://cccimg.com/view.php/10aa25188ab9ee48465f945395ee84c1.jpg"
   },
   {
     url: "http://pan.tool234.com/view.php/e39e69a02862468215161f5fa4a1ca11.mp3",
-    title: "歌曲2",
-    artist: "未知艺术家",
-    artwork: "https://cccimg.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
+    title: "最长的电影",
+    artist: "JAY",
+    artwork: "https://cccimg.com/view.php/10aa25188ab9ee48465f945395ee84c1.jpg"
   },
   {
     url: "http://pan.tool234.com/view.php/580340fd3df2f2c3c75d02fed949ac2b.mp3",
-    title: "歌曲3",
-    artist: "未知艺术家",
-    artwork: "https://cccimg.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
+    title: "花海",
+    artist: "Jay",
+    artwork: "https://cccimg.com/view.php/10aa25188ab9ee48465f945395ee84c1.jpg"
   },
   {
     url: "http://pan.tool234.com/view.php/d2733b2b075e4cb6e4aea1e155e8d6ca.flac",
-    title: "歌曲4",
+    title: "恶作剧",
     artist: "未知艺术家",
-    artwork: "https://cccimg.com/view.php/36fdf675926c3eae787de0952e64bf23.jpg"
+    artwork: "https://cccimg.com/view.php/10aa25188ab9ee48465f945395ee84c1.jpg"
   }
 ];
 let currentTrack = 0;
 const audioPlayer = document.getElementById('audioPlayer');
 const nextButton = document.getElementById('nextButton');
+const audioAvatar = document.getElementById('audioAvatar');
 let wasPlaying = false;
+
+// 旋转控制核心变量
+let rotationAngle = 0; // 当前旋转角度（0-360）
+let rotationInterval = null; // 旋转定时器
+const rotationSpeed = 0.5; // 每秒旋转角度（8秒一圈=360/8=45，这里0.5更慢，可调整）
+
+// 开始旋转
+function startRotation() {
+  if (!rotationInterval) {
+    rotationInterval = setInterval(() => {
+      rotationAngle = (rotationAngle + rotationSpeed) % 360;
+      audioAvatar.style.transform = `rotate(${rotationAngle}deg)`;
+    }, 16); // 约60帧/秒，流畅旋转
+  }
+}
+
+// 停止旋转（保留当前角度）
+function stopRotation() {
+  if (rotationInterval) {
+    clearInterval(rotationInterval);
+    rotationInterval = null;
+  }
+}
+
+// 重置旋转（角度归0）
+function resetRotation() {
+  stopRotation();
+  rotationAngle = 0;
+  audioAvatar.style.transform = `rotate(0deg)`;
+}
+
+// 音频事件监听
+audioPlayer.addEventListener('play', startRotation);
+audioPlayer.addEventListener('pause', stopRotation);
+audioPlayer.addEventListener('ended', () => {
+  resetRotation();
+  playNext(); // 自动下一首
+});
+
+// 切歌函数
 function loadCurrentTrack() {
   const currentSong = playlist[currentTrack];
   audioPlayer.src = currentSong.url;
+  audioAvatar.src = currentSong.artwork;
+  resetRotation(); // 切歌重置旋转
   audioPlayer.load();
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -289,6 +345,7 @@ function loadCurrentTrack() {
     });
   }
 }
+
 function playNext() {
   currentTrack = (currentTrack + 1) % playlist.length;
   loadCurrentTrack();
@@ -296,11 +353,14 @@ function playNext() {
     console.log('切歌自动播放受限，需手动点击播放器播放', err);
   });
 }
+
+// 页面加载完成初始化
 document.addEventListener('DOMContentLoaded', function() {
   nextButton.addEventListener('click', playNext);
-  audioPlayer.addEventListener('ended', playNext);
   loadCurrentTrack();
 });
+
+// 页面隐藏/显示控制
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
     wasPlaying = !audioPlayer.paused;
@@ -311,7 +371,8 @@ document.addEventListener('visibilitychange', function() {
     }
   }
 });
-// 加入频道按钮事件
+
+// 按钮事件（保持不变）
 document.getElementById('appJumpBtn').addEventListener('click', function() {
   const targetAppUrl = "tg://resolve?domain=qiuxiaojingmod";
   window.location.href = targetAppUrl;
@@ -321,7 +382,7 @@ document.getElementById('appJumpBtn').addEventListener('click', function() {
     }
   }, 2000);
 });
-// 作者tg按钮事件
+
 document.getElementById('zztg').addEventListener('click', function() {
   const targetAppUrl = "tg://resolve?domain=qiuxiaojing520";
   window.location.href = targetAppUrl;
@@ -331,7 +392,7 @@ document.getElementById('zztg').addEventListener('click', function() {
     }
   }, 2000);
 });
-// 新增：加入美化频道按钮事件（默认绑定美化相关Telegram频道，可修改domain）
+
 document.getElementById('beautifyChannelBtn').addEventListener('click', function() {
   const targetAppUrl = "tg://resolve?domain=YLNMH";
   window.location.href = targetAppUrl;
